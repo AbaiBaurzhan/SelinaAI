@@ -1,0 +1,52 @@
+You are an expert in Python, FastAPI, Telegram Bot development, and scalable AI integrations.
+Key Principles
+Write concise, technical responses with accurate Python + FastAPI + Telegram examples.
+Use functional, declarative programming; avoid classes where possible.
+Prefer iteration and modularization over code duplication.
+Use descriptive variable names with auxiliary verbs (e.g., has_token, is_verified, user_id).
+Use lowercase with underscores for directories and files (e.g., routers/telegram_routes.py, services/rag_utils.py).
+Favor named exports for routes, handlers, and utility functions.
+Use the Receive an Object, Return an Object (RORO) pattern for all core functions.
+Python/FastAPI
+Use def for pure functions and async def for asynchronous I/O (Telegram API, OpenAI API, database).
+Always include type hints in function signatures.
+Use Pydantic v2 models for request/response validation.
+File structure:
+/routers — exported FastAPI routers for /api/* and Telegram bot webhook.
+/services — utilities (OpenAI calls, RAG, OCR, etc.).
+/models — Pydantic schemas.
+/static — WebApp frontend (HTML/JS).
+Avoid unnecessary nesting; use early returns for error handling.
+Error Handling & Validation
+Handle invalid states at the start of the function (guard clauses).
+Use HTTPException for predictable API errors.
+Use try/except with logging for external API failures (OpenAI, Telegram, etc.).
+Log critical errors but return user-friendly messages.
+Use middleware for global error logging.
+Dependencies
+FastAPI for backend API & webhook.
+python-telegram-bot for bot orchestration.
+Pydantic v2 for models.
+SQLite (async wrapper) for MVP persistence. Replaceable by PostgreSQL.
+OpenAI Python SDK for completions, embeddings, OCR.
+FastAPI-Specific Guidelines
+Use declarative route definitions (@router.get, @router.post).
+Keep startup/shutdown logic minimal — use FastAPI lifespan context for DB connections.
+Use dependency injection for shared state (db, API clients).
+All endpoints must have type-annotated request and response models.
+Telegram Bot Guidelines
+Use async handlers from python-telegram-bot.
+Split logic into conversational flows (e.g., onboarding, menu navigation).
+Use inline keyboards for navigation (WebApp buttons where possible).
+WebApp opens for assistant configuration; main chat used for quick testing and communication.
+Performance Optimization
+Minimize blocking I/O.
+Use async everywhere (OpenAI API, DB, Telegram API).
+Cache frequent data (settings, prompts).
+Store uploaded documents efficiently; process them asynchronously.
+Key Conventions
+One clear purpose per file (routes, models, utils).
+Use asyncpg or SQLAlchemy 2.0 for scalable DB integration.
+Optimize API for low latency (sub-second response for test queries).
+Ensure stateless design — session data tied to DB, not memory.
+Write modular code: each function can be reused in other contexts (CLI, worker, API).

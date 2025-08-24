@@ -6,9 +6,9 @@
 set -e
 
 # Параметры по умолчанию
-PROJECT_ID=${1:-"your-project-id"}
-REGION=${2:-"us-central1"}
-SERVICE_NAME=${3:-"botcraft"}
+PROJECT_ID=${1:-"836619908242"}
+REGION=${2:-"europe-central2"}
+SERVICE_NAME=${3:-"selinaai-api"}
 
 echo "🚀 Развертывание SelinaAI в Google Cloud Run"
 echo "=============================================="

@@ -85,6 +85,11 @@ def get_agent_manager_dep() -> Any:
 async def health(): 
     return {"ok": True, "service": "BotCraft Multi-Channel API", "version": "2.0.0"}
 
+@app.get("/healthz")
+async def healthz(): 
+    """Health check endpoint for Google Cloud Run"""
+    return {"status": "healthy", "service": "BotCraft", "version": "2.0.0"}
+
 @app.get("/")
 async def root():
     """Главная страница"""

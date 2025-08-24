@@ -1,4 +1,4 @@
-# BotCraft Multi-Channel API Dependencies
+# BotCraft Multi-Channel API Dependencies for Google Cloud Run
 # Core Framework
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
@@ -35,3 +35,6 @@ aiosqlite>=0.19.0
 # Utilities
 pydantic>=2.5.0
 python-dateutil>=2.8.0
+
+# Cloud Run specific
+gunicorn>=21.2.0

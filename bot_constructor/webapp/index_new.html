@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BotCraft - Создание ИИ-ассистентов</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .auth-section {
+            padding: 40px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .auth-form {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .main-content {
+            display: none;
+            padding: 40px;
+        }
+        
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .agent-card {
+            background: white;
+            border: 2px solid #e1e5e9;
+            border-radius: 16px;
+            padding: 25px;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .agent-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+        
+        .agent-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+        
+        .agent-info {
+            margin-bottom: 20px;
+        }
+        
+        .agent-info p {
+            margin-bottom: 8px;
+            color: #666;
+        }
+        
+        .agent-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+            width: auto;
+        }
+        
+        .create-agent-form {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .create-agent-form h2 {
+            margin-bottom: 25px;
+            color: #333;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-row.full {
+            grid-template-columns: 1fr;
+        }
+        
+        .status {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .telegram-login {
+            background: #0088cc;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+        
+        .telegram-login:hover {
+            background: #0077b3;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Заголовок -->
+        <div class="header">
+            <h1>🚀 BotCraft</h1>
+            <p>Создавайте ИИ-ассистентов для вашего бизнеса</p>
+        </div>
+        
+        <!-- Секция авторизации -->
+        <div class="auth-section" id="authSection">
+            <h2>🔐 Авторизация</h2>
+            <p>Войдите через Telegram или email для доступа к платформе</p>
+            
+            <div class="auth-form">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="emailInput" placeholder="your@email.com">
+                </div>
+                
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="passwordInput" placeholder="Ваш пароль">
+                </div>
+                
+                <button class="btn" onclick="loginWithEmail()">Войти</button>
+                
+                <a href="#" class="telegram-login" onclick="loginWithTelegram()">
+                    📱 Войти через Telegram
+                </a>
+            </div>
+        </div>
+        
+        <!-- Основной контент -->
+        <div class="main-content" id="mainContent">
+            <!-- Форма создания агента -->
+            <div class="create-agent-form">
+                <h2>🤖 Создать нового ИИ-агента</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Название агента</label>
+                        <input type="text" id="agentName" placeholder="Мой магазин">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Тон общения</label>
+                        <select id="agentTone">
+                            <option value="дружелюбный">Дружелюбный</option>
+                            <option value="деловой">Деловой</option>
+                            <option value="экспертный">Экспертный</option>
+                            <option value="заботливый">Заботливый</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label>Описание бизнеса</label>
+                        <input type="text" id="businessDescription" 
+                               placeholder="Что делает ваша компания?">
+                    </div>
+                </div>
+                
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label>Возможности агента</label>
+                        <input type="text" id="agentCapabilities" 
+                               placeholder="Что должен уметь ваш агент?">
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="createAgent()">Создать агента</button>
+            </div>
+            
+            <!-- Список агентов -->
+            <h2>📋 Ваши ИИ-агенты</h2>
+            <div class="agents-grid" id="agentsGrid">
+                <div class="loading">Загрузка агентов...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let userAgents = [];
+        
+        // Проверяем авторизацию при загрузке
+        window.onload = function() {
+            checkAuth();
+        };
+        
+        // Проверка авторизации
+        async function checkAuth() {
+            try {
+                // Проверяем сессию
+                const response = await fetch('/api/agents');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.ok) {
+                        currentUser = { id: 1 }; // Упрощенно
+                        userAgents = data.agents;
+                        showMainContent();
+                        loadAgents();
+                    }
+                }
+            } catch (e) {
+                console.log('Пользователь не авторизован');
+            }
+        }
+        
+        // Авторизация по email
+        async function loginWithEmail() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            
+            if (!email || !password) {
+                showStatus('Заполните все поля', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/auth/email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    currentUser = data.user;
+                    showStatus('Успешная авторизация!', 'success');
+                    setTimeout(() => {
+                        showMainContent();
+                        loadAgents();
+                    }, 1000);
+                } else {
+                    showStatus('Ошибка авторизации', 'error');
+                }
+            } catch (e) {
+                showStatus('Ошибка подключения', 'error');
+            }
+        }
+        
+        // Авторизация через Telegram
+        function loginWithTelegram() {
+            // В Telegram WebApp это будет автоматически
+            if (window.Telegram && window.Telegram.WebApp) {
+                const initData = window.Telegram.WebApp.initData;
+                if (initData) {
+                    loginWithTelegramData(initData);
+                }
+            } else {
+                showStatus('Откройте в Telegram WebApp', 'error');
+            }
+        }
+        
+        async function loginWithTelegramData(initData) {
+            try {
+                const response = await fetch('/api/auth/telegram', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ initData })
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    currentUser = data.user;
+                    showStatus('Успешная авторизация через Telegram!', 'success');
+                    setTimeout(() => {
+                        showMainContent();
+                        loadAgents();
+                    }, 1000);
+                } else {
+                    showStatus('Ошибка авторизации через Telegram', 'error');
+                }
+            } catch (e) {
+                showStatus('Ошибка подключения', 'error');
+            }
+        }
+        
+        // Показать основной контент
+        function showMainContent() {
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+        }
+        
+        // Загрузка агентов
+        async function loadAgents() {
+            try {
+                const response = await fetch('/api/agents');
+                const data = await response.json();
+                
+                if (data.ok) {
+                    userAgents = data.agents;
+                    renderAgents();
+                }
+            } catch (e) {
+                console.error('Ошибка загрузки агентов:', e);
+            }
+        }
+        
+        // Отрисовка агентов
+        function renderAgents() {
+            const grid = document.getElementById('agentsGrid');
+            
+            if (userAgents.length === 0) {
+                grid.innerHTML = '<div class="loading">У вас пока нет агентов. Создайте первого!</div>';
+                return;
+            }
+            
+            grid.innerHTML = userAgents.map(agent => `
+                <div class="agent-card">
+                    <h3>${agent.name}</h3>
+                    <div class="agent-info">
+                        <p><strong>Бизнес:</strong> ${agent.business_description || 'Не указано'}</p>
+                        <p><strong>Возможности:</strong> ${agent.capabilities || 'Не указано'}</p>
+                        <p><strong>Тон:</strong> ${agent.tone}</p>
+                        <p><strong>Создан:</strong> ${new Date(agent.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div class="agent-actions">
+                        <button class="btn btn-small" onclick="editAgent(${agent.id})">✏️ Редактировать</button>
+                        <button class="btn btn-small btn-secondary" onclick="deleteAgent(${agent.id})">🗑️ Удалить</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Создание агента
+        async function createAgent() {
+            const name = document.getElementById('agentName').value;
+            const businessDescription = document.getElementById('businessDescription').value;
+            const capabilities = document.getElementById('agentCapabilities').value;
+            const tone = document.getElementById('agentTone').value;
+            
+            if (!name || !businessDescription || !capabilities) {
+                showStatus('Заполните все обязательные поля', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/agents', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name,
+                        business_description: businessDescription,
+                        capabilities,
+                        tone
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    showStatus('Агент успешно создан!', 'success');
+                    clearForm();
+                    loadAgents();
+                } else {
+                    showStatus('Ошибка создания агента', 'error');
+                }
+            } catch (e) {
+                showStatus('Ошибка подключения', 'error');
+            }
+        }
+        
+        // Очистка формы
+        function clearForm() {
+            document.getElementById('agentName').value = '';
+            document.getElementById('businessDescription').value = '';
+            document.getElementById('agentCapabilities').value = '';
+            document.getElementById('agentTone').value = 'дружелюбный';
+        }
+        
+        // Редактирование агента
+        function editAgent(agentId) {
+            // TODO: Реализовать редактирование
+            showStatus('Редактирование в разработке', 'error');
+        }
+        
+        // Удаление агента
+        async function deleteAgent(agentId) {
+            if (!confirm('Вы уверены, что хотите удалить этого агента?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/agents/${agentId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    showStatus('Агент удален!', 'success');
+                    loadAgents();
+                } else {
+                    showStatus('Ошибка удаления', 'error');
+                }
+            } catch (e) {
+                showStatus('Ошибка подключения', 'error');
+            }
+        }
+        
+        // Показать статус
+        function showStatus(message, type) {
+            const status = document.createElement('div');
+            status.className = `status ${type}`;
+            status.textContent = message;
+            
+            const mainContent = document.getElementById('mainContent');
+            mainContent.insertBefore(status, mainContent.firstChild);
+            
+            setTimeout(() => {
+                status.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

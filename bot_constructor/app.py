@@ -1,163 +1,620 @@
-# app.py
+# app.py - BotCraft Multi-Channel API
 from __future__ import annotations
-import os, hmac, hashlib, time, json, sqlite3
+import os
+import json
 from pathlib import Path
-from typing import Dict, Any, Optional
-from urllib.parse import parse_qsl, unquote_plus
+from typing import Dict, Any, Optional, List
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form, Depends, Response
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from starlette.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer
+
+# Импортируем новые модули
+from database import db, User, AIAgent, Document
+from auth import auth_manager, get_current_user, get_optional_user
+from agents import get_agent_manager
+from channels.manager import ChannelManager
+from channels.base import Message, Response as ChannelResponse, MessageType
 
 # ---------- ENV ----------
 load_dotenv("touch.env") or load_dotenv()
+
+# Проверяем обязательные переменные
 BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
 if not BOT_TOKEN:
     raise RuntimeError("TELEGRAM_TOKEN не найден в окружении")
+
 ROOT = Path(__file__).parent
-DB_PATH = ROOT / "state.db"
 WEB_DIR = ROOT / "webapp"
 UPLOADS_DIR = ROOT / "uploads"
 WEB_DIR.mkdir(exist_ok=True)
 UPLOADS_DIR.mkdir(exist_ok=True)
 
+# ---------- Конфигурация каналов ----------
+CHANNELS_CONFIG = {
+    "webhook_base_url": os.getenv("WEBAPP_URL", "https://127.0.0.1:8000"),
+    "telegram": {
+        "token": os.getenv("TELEGRAM_TOKEN"),
+        "webhook_url": os.getenv("WEBAPP_URL", "https://127.0.0.1:8000"),
+        "webhook_mode": os.getenv("TELEGRAM_WEBHOOK_MODE", "false").lower() == "true"
+    },
+    "whatsapp": {
+        "access_token": os.getenv("WHATSAPP_ACCESS_TOKEN"),
+        "phone_number_id": os.getenv("WHATSAPP_PHONE_NUMBER_ID"),
+        "verify_token": os.getenv("WHATSAPP_VERIFY_TOKEN"),
+        "app_secret": os.getenv("WHATSAPP_APP_SECRET")
+    },
+    "instagram": {
+        "access_token": os.getenv("INSTAGRAM_ACCESS_TOKEN"),
+        "instagram_business_account_id": os.getenv("INSTAGRAM_BUSINESS_ACCOUNT_ID"),
+        "page_id": os.getenv("INSTAGRAM_PAGE_ID"),
+        "verify_token": os.getenv("INSTAGRAM_VERIFY_TOKEN")
+    }
+}
+
 # ---------- App ----------
-app = FastAPI(title="SynapserAI WebApp API")
-app.add_middleware(
-    CORSMiddleware, allow_origins=["*"], allow_credentials=True,
-    allow_methods=["*"], allow_headers=["*"],
+app = FastAPI(
+    title="BotCraft Multi-Channel API",
+    description="Платформа для создания ИИ-ассистентов с поддержкой Telegram, WhatsApp и Instagram",
+    version="2.0.0"
 )
 
+app.add_middleware(
+    CORSMiddleware, 
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"], 
+    allow_headers=["*"],
+)
+
+# Инициализируем менеджер каналов
+channel_manager = ChannelManager(CHANNELS_CONFIG)
+
+# Инициализируем менеджер агентов
+agent_manager = get_agent_manager(channel_manager)
+
+# ---------- Dependency для получения менеджера агентов ----------
+def get_agent_manager_dep() -> Any:
+    return agent_manager
+
+# ---------- Базовые эндпоинты ----------
 @app.get("/health")
-async def health(): return {"ok": True}
+async def health(): 
+    return {"ok": True, "service": "BotCraft Multi-Channel API", "version": "2.0.0"}
 
-def db():
-    con = sqlite3.connect(DB_PATH)
-    con.execute("""
-        CREATE TABLE IF NOT EXISTS owners(
-            user_id INTEGER PRIMARY KEY,
-            business TEXT DEFAULT '',
-            abilities TEXT DEFAULT '',
-            tone TEXT DEFAULT 'дружелюбный',
-            prompt TEXT DEFAULT '',
-            integrations_json TEXT DEFAULT '{}',
-            created_at INTEGER DEFAULT (strftime('%s','now'))
-        )""")
-    con.commit()
-    return con
+@app.get("/")
+async def root():
+    """Главная страница"""
+    return HTMLResponse("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>BotCraft API</title>
+        <meta charset="utf-8">
+    </head>
+    <body>
+        <h1>🚀 BotCraft Multi-Channel API</h1>
+        <p>Платформа для создания ИИ-ассистентов</p>
+        <p><a href="/docs">📚 API Документация</a></p>
+        <p><a href="/webapp">🌐 WebApp Интерфейс</a></p>
+    </body>
+    </html>
+    """)
 
-def validate_init_data(init_data: str) -> Dict[str, Any]:
-    """HMAC‑проверка initData из Telegram Web App."""
-    data = dict(parse_qsl(init_data, keep_blank_values=True))
-    if "hash" not in data: raise HTTPException(401, "No hash")
-    received_hash = data.pop("hash")
+# ---------- API авторизации ----------
+@app.post("/api/auth/telegram")
+async def auth_telegram(request: Request):
+    """Авторизация через Telegram WebApp"""
+    try:
+        body = await request.json()
+        init_data = body.get("initData")
+        
+        if not init_data:
+            raise HTTPException(status_code=400, detail="initData required")
+        
+        # Аутентифицируем пользователя
+        user = auth_manager.authenticate_telegram_user(init_data)
+        
+        # Создаем сессию
+        session_token = auth_manager.create_session(user)
+        
+        # Создаем JWT токен
+        access_token = auth_manager.create_access_token(user)
+        
+        return {
+            "ok": True,
+            "user": {
+                "id": user.id,
+                "telegram_id": user.telegram_id,
+                "email": user.email,
+                "created_at": user.created_at.isoformat()
+            },
+            "session_token": session_token,
+            "access_token": access_token
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
 
-    secret = hashlib.sha256(BOT_TOKEN.encode()).digest()
-    check_str = "\n".join(f"{k}={unquote_plus(v)}" for k, v in sorted(data.items()))
-    calc = hmac.new(secret, check_str.encode(), hashlib.sha256).hexdigest()
-    if not hmac.compare_digest(received_hash, calc):
-        raise HTTPException(401, "Bad hash")
+@app.post("/api/auth/email")
+async def auth_email(request: Request):
+    """Авторизация по email и паролю"""
+    try:
+        body = await request.json()
+        email = body.get("email")
+        password = body.get("password")
+        
+        if not email or not password:
+            raise HTTPException(status_code=400, detail="Email and password required")
+        
+        # Аутентифицируем пользователя
+        user = auth_manager.authenticate_email_user(email, password)
+        
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        # Создаем сессию
+        session_token = auth_manager.create_session(user)
+        
+        # Создаем JWT токен
+        access_token = auth_manager.create_access_token(user)
+        
+        return {
+            "ok": True,
+            "user": {
+                "id": user.id,
+                "telegram_id": user.telegram_id,
+                "email": user.email,
+                "created_at": user.created_at.isoformat()
+            },
+            "session_token": session_token,
+            "access_token": access_token
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
 
-    # необязательная защита по времени
-    auth_date = int(data.get("auth_date", "0") or "0")
-    if abs(time.time() - auth_date) > 60 * 60 * 24:
-        raise HTTPException(401, "Expired auth_date")
+@app.post("/api/auth/logout")
+async def logout(request: Request):
+    """Выход пользователя"""
+    try:
+        # Получаем токен сессии из cookie
+        session_token = request.cookies.get("session_token")
+        
+        if session_token:
+            auth_manager.logout(session_token)
+        
+        response = JSONResponse({"ok": True, "message": "Logged out successfully"})
+        response.delete_cookie("session_token")
+        return response
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    user = json.loads(data.get("user", "{}"))
-    if "id" not in user: raise HTTPException(401, "No user.id")
-    return user
+# ---------- API управления агентами ----------
+@app.get("/api/agents")
+async def get_agents(user: User = Depends(get_current_user)):
+    """Получение всех агентов пользователя"""
+    try:
+        agents = agent_manager.get_user_agents(user)
+        return {
+            "ok": True,
+            "agents": [
+                {
+                    "id": agent.id,
+                    "name": agent.name,
+                    "business_description": agent.business_description,
+                    "capabilities": agent.capabilities,
+                    "tone": agent.tone,
+                    "system_prompt": agent.system_prompt,
+                    "integrations": json.loads(agent.integrations) if agent.integrations else {},
+                    "created_at": agent.created_at.isoformat(),
+                    "is_active": agent.is_active
+                }
+                for agent in agents
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-# ---------- API: шаги мастера ----------
-@app.post("/api/verify")
-async def api_verify(request: Request):
-    body = await request.json()
-    user = validate_init_data(body.get("initData") or "")
-    # авто‑создание записи
-    with db() as con:
-        con.execute(
-            "INSERT OR IGNORE INTO owners(user_id) VALUES(?)", (user["id"],)
-        ); con.commit()
-    return {"ok": True, "user": {"id": user["id"], "first_name": user.get("first_name","")}}
+@app.post("/api/agents")
+async def create_agent(
+    request: Request,
+    user: User = Depends(get_current_user),
+    agent_manager_dep: Any = Depends(get_agent_manager_dep)
+):
+    """Создание нового ИИ агента"""
+    try:
+        body = await request.json()
+        name = body.get("name")
+        business_description = body.get("business_description")
+        capabilities = body.get("capabilities")
+        tone = body.get("tone", "дружелюбный")
+        
+        if not all([name, business_description, capabilities]):
+            raise HTTPException(status_code=400, detail="Name, business_description and capabilities required")
+        
+        # Создаем агента
+        agent = agent_manager_dep.create_agent(
+            user=user,
+            name=name,
+            business_description=business_description,
+            capabilities=capabilities,
+            tone=tone
+        )
+        
+        return {
+            "ok": True,
+            "agent": {
+                "id": agent.id,
+                "name": agent.name,
+                "business_description": agent.business_description,
+                "capabilities": agent.capabilities,
+                "tone": agent.tone,
+                "created_at": agent.created_at.isoformat()
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/save_basics")
-async def api_save_basics(request: Request):
-    p = await request.json()
-    user = validate_init_data(p.get("initData") or "")
-    business  = (p.get("business") or "").strip()
-    abilities = (p.get("abilities") or "").strip()
-    with db() as con:
-        con.execute("UPDATE owners SET business=?, abilities=? WHERE user_id=?",
-                    (business, abilities, user["id"]))
-        con.commit()
-    return {"ok": True}
+@app.get("/api/agents/{agent_id}")
+async def get_agent(
+    agent_id: int,
+    user: User = Depends(get_current_user),
+    agent_manager_dep: Any = Depends(get_agent_manager_dep)
+):
+    """Получение конкретного агента"""
+    try:
+        agent = agent_manager_dep.get_agent(user, agent_id)
+        
+        return {
+            "ok": True,
+            "agent": {
+                "id": agent.id,
+                "name": agent.name,
+                "business_description": agent.business_description,
+                "capabilities": agent.capabilities,
+                "tone": agent.tone,
+                "system_prompt": agent.system_prompt,
+                "integrations": agent.integrations,
+                "created_at": agent.created_at.isoformat(),
+                "is_active": agent.is_active
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/save_tone")
-async def api_save_tone(request: Request):
-    p = await request.json()
-    user = validate_init_data(p.get("initData") or "")
-    tone = (p.get("tone") or "дружелюбный").strip()
-    with db() as con:
-        con.execute("UPDATE owners SET tone=? WHERE user_id=?", (tone, user["id"]))
-        con.commit()
-    return {"ok": True}
+@app.put("/api/agents/{agent_id}")
+async def update_agent(
+    agent_id: int,
+    request: Request,
+    user: User = Depends(get_current_user),
+    agent_manager_dep: Any = Depends(get_agent_manager_dep)
+):
+    """Обновление ИИ агента"""
+    try:
+        body = await request.json()
+        
+        # Обновляем агента
+        updated_agent = agent_manager_dep.update_agent(user, agent_id, **body)
+        
+        return {
+            "ok": True,
+            "agent": {
+                "id": updated_agent.id,
+                "name": updated_agent.name,
+                "business_description": updated_agent.business_description,
+                "capabilities": updated_agent.capabilities,
+                "tone": updated_agent.tone,
+                "system_prompt": updated_agent.system_prompt,
+                "integrations": json.loads(updated_agent.integrations) if updated_agent.integrations else {},
+                "updated_at": updated_agent.created_at.isoformat()
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/generate_prompt")
-async def api_generate_prompt(request: Request):
-    p = await request.json()
-    user = validate_init_data(p.get("initData") or "")
-    with db() as con:
-        row = con.execute("SELECT business, abilities, tone FROM owners WHERE user_id=?",
-                          (user["id"],)).fetchone()
-    business, abilities, tone = row or ("", "", "дружелюбный")
-    prompt = (
-        f"Ты — ИИ-ассистент для бизнеса: {business}. "
-        f"Тон общения: {tone}. "
-        f"Основные задачи: {abilities}. "
-        "Отвечай кратко, структурированно, уточняй детали, предлагай товары/услуги. "
-        "Если чего-то не знаешь — вежливо уточни у клиента и предложи связаться с оператором."
-    )
-    with db() as con:
-        con.execute("UPDATE owners SET prompt=? WHERE user_id=?", (prompt, user["id"]))
-        con.commit()
-    return {"ok": True, "prompt": prompt}
+@app.delete("/api/agents/{agent_id}")
+async def delete_agent(
+    agent_id: int,
+    user: User = Depends(get_current_user),
+    agent_manager_dep: Any = Depends(get_agent_manager_dep)
+):
+    """Удаление ИИ агента"""
+    try:
+        success = agent_manager_dep.delete_agent(user, agent_id)
+        
+        if success:
+            return {"ok": True, "message": "Agent deleted successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete agent")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/load_all")
-async def api_load_all(initData: str):
-    user = validate_init_data(initData)
-    with db() as con:
-        row = con.execute(
-            "SELECT business, abilities, tone, prompt, integrations_json "
-            "FROM owners WHERE user_id=?", (user["id"],)
-        ).fetchone()
-    if not row:
-        return {"ok": True, "business":"", "abilities":"", "tone":"дружелюбный",
-                "prompt":"", "integrations": {}}
-    business, abilities, tone, prompt, integrations_json = row
-    return {"ok": True, "business": business, "abilities": abilities, "tone": tone,
-            "prompt": prompt, "integrations": json.loads(integrations_json or "{}")}
+# ---------- API для промптов ----------
+@app.post("/api/agents/{agent_id}/generate_prompt")
+async def generate_prompt(
+    agent_id: int,
+    user: User = Depends(get_current_user),
+    agent_manager_dep: Any = Depends(get_agent_manager_dep)
+):
+    """Генерация системного промпта для агента"""
+    try:
+        # Получаем агента
+        agent = agent_manager_dep.get_agent(user, agent_id)
+        
+        # Генерируем промпт
+        prompt = agent_manager_dep.generate_system_prompt(agent)
+        
+        # Обновляем агента
+        updated_agent = agent_manager_dep.update_agent_prompt(user, agent_id, prompt)
+        
+        return {
+            "ok": True,
+            "prompt": prompt,
+            "agent_id": agent_id
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/save_integrations")
-async def api_save_integrations(request: Request):
-    p = await request.json()
-    user = validate_init_data(p.get("initData") or "")
-    # сохраняем как есть (шифрование/хранилище секретов — на следующих этапах)
-    integrations = p.get("integrations") or {}
-    with db() as con:
-        con.execute("UPDATE owners SET integrations_json=? WHERE user_id=?",
-                    (json.dumps(integrations), user["id"]))
-        con.commit()
-    return {"ok": True}
+# ---------- API для интеграций ----------
+@app.put("/api/agents/{agent_id}/integrations")
+async def update_integrations(
+    agent_id: int,
+    request: Request,
+    user: User = Depends(get_current_user),
+    agent_manager_dep: Any = Depends(get_agent_manager_dep)
+):
+    """Обновление интеграций агента"""
+    try:
+        body = await request.json()
+        integrations = body.get("integrations", {})
+        
+        # Обновляем интеграции
+        updated_agent = agent_manager_dep.update_agent_integrations(user, agent_id, integrations)
+        
+        return {
+            "ok": True,
+            "integrations": updated_agent.integrations,
+            "agent_id": agent_id
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/upload_file")
-async def api_upload_file(initData: str = Form(...), file: UploadFile = File(...)):
-    user = validate_init_data(initData)
-    name = f"u{user['id']}_{int(time.time())}_{file.filename}"
-    (UPLOADS_DIR / name).write_bytes(await file.read())
-    # Индексацию в RAG подключишь позже
-    return {"ok": True, "saved_as": name}
+# ---------- API для документов ----------
+@app.post("/api/agents/{agent_id}/documents")
+async def upload_document(
+    agent_id: int,
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user),
+    agent_manager_dep: Any = Depends(get_agent_manager_dep)
+):
+    """Загрузка документа для агента"""
+    try:
+        # Загружаем документ
+        document = agent_manager_dep.upload_document(user, agent_id, file)
+        
+        return {
+            "ok": True,
+            "document": {
+                "id": document.id,
+                "filename": document.filename,
+                "file_type": document.file_type,
+                "uploaded_at": document.uploaded_at.isoformat()
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-# ---------- статика (WebApp) ----------
-# ВАЖНО: монтируем в самом конце, чтобы /api/* не перехватывалось
-app.mount("/", StaticFiles(directory=str(WEB_DIR), html=True), name="web")
+@app.get("/api/agents/{agent_id}/documents")
+async def get_agent_documents(
+    agent_id: int,
+    user: User = Depends(get_current_user),
+    agent_manager_dep: Any = Depends(get_agent_manager_dep)
+):
+    """Получение документов агента"""
+    try:
+        documents = agent_manager_dep.get_agent_documents(user, agent_id)
+        
+        return {
+            "ok": True,
+            "documents": [
+                {
+                    "id": doc.id,
+                    "filename": doc.filename,
+                    "file_type": doc.file_type,
+                    "uploaded_at": doc.uploaded_at.isoformat(),
+                    "is_processed": doc.is_processed
+                }
+                for doc in documents
+            ]
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ---------- API для тестирования каналов ----------
+@app.get("/api/agents/{agent_id}/test_channels")
+async def test_agent_channels(
+    agent_id: int,
+    user: User = Depends(get_current_user),
+    agent_manager_dep: Any = Depends(get_agent_manager_dep)
+):
+    """Тестирование каналов агента"""
+    try:
+        results = agent_manager_dep.test_agent_channels(user, agent_id)
+        return {"ok": True, **results}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ---------- API для каналов ----------
+@app.get("/channels/status")
+async def get_channels_status():
+    """Получение статуса всех каналов"""
+    return {
+        "ok": True,
+        "channels": channel_manager.get_all_channels_status(),
+        "active_channels": channel_manager.get_active_channels()
+    }
+
+@app.post("/channels/start")
+async def start_channels():
+    """Запуск всех каналов"""
+    success = await channel_manager.start_all_channels()
+    return {
+        "ok": success,
+        "message": "Каналы запущены" if success else "Ошибка запуска каналов"
+    }
+
+@app.post("/channels/stop")
+async def stop_channels():
+    """Остановка всех каналов"""
+    success = await channel_manager.stop_all_channels()
+    return {
+        "ok": success,
+        "message": "Каналы остановлены" if success else "Ошибка остановки каналов"
+    }
+
+# ---------- Webhook эндпоинты для каналов ----------
+@app.get("/webhook/telegram")
+async def telegram_webhook_verify(request: Request):
+    """Верификация webhook Telegram"""
+    params = dict(request.query_params)
+    if await channel_manager.verify_webhook("telegram", params):
+        return JSONResponse(content=params.get("hub.challenge", ""))
+    else:
+        raise HTTPException(status_code=400, detail="Webhook verification failed")
+
+@app.post("/webhook/telegram")
+async def telegram_webhook(request: Request):
+    """Обработка webhook Telegram"""
+    try:
+        data = await request.json()
+        response = await channel_manager.process_message("telegram", data)
+        return {"ok": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/webhook/whatsapp")
+async def whatsapp_webhook_verify(request: Request):
+    """Верификация webhook WhatsApp"""
+    params = dict(request.query_params)
+    if await channel_manager.verify_webhook("whatsapp", params):
+        return JSONResponse(content=params.get("hub.challenge", ""))
+    else:
+        raise HTTPException(status_code=400, detail="Webhook verification failed")
+
+@app.post("/webhook/whatsapp")
+async def whatsapp_webhook(request: Request):
+    """Обработка webhook WhatsApp"""
+    try:
+        data = await request.json()
+        response = await channel_manager.process_message("whatsapp", data)
+        return {"ok": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/webhook/instagram")
+async def instagram_webhook_verify(request: Request):
+    """Верификация webhook Instagram"""
+    params = dict(request.query_params)
+    if await channel_manager.verify_webhook("instagram", params):
+        return JSONResponse(content=params.get("hub.challenge", ""))
+    else:
+        raise HTTPException(status_code=400, detail="Webhook verification failed")
+
+@app.post("/webhook/instagram")
+async def instagram_webhook(request: Request):
+    """Обработка webhook Instagram"""
+    try:
+        data = await request.json()
+        response = await channel_manager.process_message("instagram", data)
+        return {"ok": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ---------- API для отправки сообщений ----------
+@app.post("/api/send_message")
+async def send_message(request: Request):
+    """Отправка сообщения в конкретный канал"""
+    try:
+        data = await request.json()
+        channel = data.get("channel")
+        chat_id = data.get("chat_id")
+        content = data.get("content")
+        
+        if not all([channel, chat_id, content]):
+            raise HTTPException(status_code=400, detail="Missing required fields")
+        
+        response = ChannelResponse(
+            chat_id=chat_id,
+            content=content,
+            message_type=MessageType.TEXT
+        )
+        
+        success = await channel_manager.send_message(channel, response)
+        return {"ok": success, "channel": channel}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/send_message_all")
+async def send_message_all_channels(request: Request):
+    """Отправка сообщения во все активные каналы"""
+    try:
+        data = await request.json()
+        chat_id = data.get("chat_id")
+        content = data.get("content")
+        
+        if not all([chat_id, content]):
+            raise HTTPException(status_code=400, detail="Missing required fields")
+        
+        response = ChannelResponse(
+            chat_id=chat_id,
+            content=content,
+            message_type=MessageType.TEXT
+        )
+        
+        results = await channel_manager.send_message_all_channels(response)
+        return {"ok": True, "results": results}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ---------- Статика (WebApp) ----------
+app.mount("/webapp", StaticFiles(directory=str(WEB_DIR), html=True), name="webapp")
+
+# ---------- Startup и Shutdown события ----------
+@app.on_event("startup")
+async def startup_event():
+    """Запуск при старте FastAPI"""
+    try:
+        # Запускаем все каналы
+        await channel_manager.start_all_channels()
+        print("🚀 BotCraft Multi-Channel API v2.0 запущен")
+        print("📱 Поддержка: Telegram, WhatsApp, Instagram")
+        print("🔐 Система авторизации: активна")
+        print("🤖 Управление агентами: готово")
+    except Exception as e:
+        print(f"❌ Ошибка запуска каналов: {e}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Остановка при завершении FastAPI"""
+    try:
+        # Останавливаем все каналы
+        await channel_manager.stop_all_channels()
+        print("🛑 BotCraft Multi-Channel API остановлен")
+    except Exception as e:
+        print(f"❌ Ошибка остановки каналов: {e}")

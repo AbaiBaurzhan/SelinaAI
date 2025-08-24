@@ -9,11 +9,12 @@ from telegram.constants import ChatAction
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 )
+from rag import upload_doc, configure_key_resolver
 
 load_dotenv("touch.env") or load_dotenv()
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-WEBAPP_URL     = os.getenv("WEBAPP_URL", "http://127.0.0.1:8000")
+WEBAPP_URL     = os.getenv("WEBAPP_URL", "https://df98ea55d1c4.ngrok-free.app")
 OPENAI_KEY     = os.getenv("OPENAI_API_KEY")
 
 if not TELEGRAM_TOKEN:
@@ -24,20 +25,37 @@ def system_prompt_from_env() -> str:
     return os.getenv("FALLBACK_SYSTEM_PROMPT", "Ты вежливый ассистент малого бизнеса.")
 
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔧 Открыть панель", web_app=WebAppInfo(url=WEBAPP_URL))]
-    ])
-    await update.message.reply_text(
-        "Привет! Я конструктор ИИ‑ассистента.\n"
-        "Нажми кнопку, чтобы открыть панель и пройти быстрый мастер.",
-        reply_markup=kb
-    )
+    # Для локальной разработки показываем ссылку вместо WebApp кнопки
+    if WEBAPP_URL.startswith("https://127.0.0.1"):
+        await update.message.reply_text(
+            "Привет! Я конструктор ИИ‑ассистента.\n\n"
+            "🌐 **WebApp панель**: https://127.0.0.1:8000\n\n"
+            "📱 **Команды бота**:\n"
+            "/panel - открыть панель\n"
+            "/ask - задать вопрос\n"
+            "/upload - загрузить документ"
+        )
+    else:
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔧 Открыть панель", web_app=WebAppInfo(url=WEBAPP_URL))]
+        ])
+        await update.message.reply_text(
+            "Привет! Я конструктор ИИ‑ассистента.\n"
+            "Нажми кнопку, чтобы открыть панель и пройти быстрый мастер.",
+            reply_markup=kb
+        )
 
 async def panel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔧 Открыть панель настроек", web_app=WebAppInfo(url=WEBAPP_URL))]
-    ])
-    await update.message.reply_text("Открой панель настроек в мини‑приложении.", reply_markup=kb)
+    if WEBAPP_URL.startswith("https://127.0.0.1"):
+        await update.message.reply_text(
+            "🌐 **WebApp панель**: https://127.0.0.1:8000\n\n"
+            "Откройте эту ссылку в браузере для настройки ассистента."
+        )
+    else:
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔧 Открыть панель настроек", web_app=WebAppInfo(url=WEBAPP_URL))]
+        ])
+        await update.message.reply_text("Открой панель настроек в мини‑приложении.", reply_markup=kb)
 
 async def ask_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Быстрый тест ответа ассистента прямо в чате."""
@@ -69,10 +87,14 @@ async def fallback_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await start_cmd(update, context)
 
 def main():
+    # Настраиваем резолвер ключей для RAG
+    configure_key_resolver(lambda: OPENAI_KEY)
+    
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("start", start_cmd))
     app.add_handler(CommandHandler("panel", panel_cmd))
     app.add_handler(CommandHandler("ask", ask_cmd))
+    app.add_handler(CommandHandler("upload", upload_doc))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, fallback_text))
     print("🤖 Бот запущен")
     app.run_polling()

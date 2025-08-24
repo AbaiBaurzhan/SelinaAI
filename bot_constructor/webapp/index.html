@@ -3,114 +3,200 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>SynapserAI — мастер ассистента</title>
+  <title>SynapserAI — настройка ассистента</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     body{margin:0;background:#0f1115;color:#eaecef;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial}
-    .wrap{max-width:640px;margin:0 auto;padding:20px}
-    h1{font-size:22px;margin:12px 0 8px}
-    .card{background:#151821;border:1px solid #202534;border-radius:16px;padding:16px;margin:12px 0}
-    label{opacity:.9;font-size:14px}
-    input,textarea,select,button{width:100%;margin-top:8px;padding:12px;border-radius:12px;border:1px solid #2a3142;background:#0f1320;color:#eaecef}
-    textarea{min-height:120px;resize:vertical}
-    button{border:0;background:#4b8cff;font-weight:600;cursor:pointer}
-    .row{display:flex;gap:10px}
-    .row>button{flex:1}
-    .muted{opacity:.75;font-size:13px}
-    .hidden{display:none}
-    .ok{color:#7ee787}
-    .err{color:#ff8182;white-space:pre-wrap}
-    .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .chip{padding:8px 10px;border:1px solid #2a3142;border-radius:999px;cursor:pointer}
-    .chip.active{background:#1f2940}
-    .center{display:flex;justify-content:center;gap:10px}
+    .wrap{max-width:800px;margin:0 auto;padding:20px}
+    h1{font-size:24px;margin:16px 0 12px;text-align:center}
+    .subtitle{text-align:center;opacity:.8;margin-bottom:24px}
+    .card{background:#151821;border:1px solid #202534;border-radius:16px;padding:20px;margin:16px 0}
+    .card h3{margin:0 0 16px 0;font-size:18px;color:#4b8cff}
+    label{opacity:.9;font-size:14px;display:block;margin-bottom:8px}
+    input,textarea,select{width:100%;margin-bottom:16px;padding:12px;border-radius:12px;border:1px solid #2a3142;background:#0f1320;color:#eaecef;box-sizing:border-box}
+    textarea{min-height:100px;resize:vertical}
+    button{border:0;background:#4b8cff;font-weight:600;cursor:pointer;padding:12px 24px;border-radius:12px;color:white;margin-right:12px;margin-bottom:12px}
+    button:hover{background:#3a7ce8}
+    button.secondary{background:#2a3142}
+    button.secondary:hover{background:#3a4a5a}
+    .muted{opacity:.75;font-size:13px;margin-top:8px}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+    .chip{padding:8px 16px;border:1px solid #2a3142;border-radius:999px;cursor:pointer;transition:all 0.2s}
+    .chip:hover{background:#1f2940}
+    .chip.active{background:#4b8cff;border-color:#4b8cff}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .col{flex:1;min-width:300px}
+    .file-upload{position:relative;display:inline-block;cursor:pointer}
+    .file-upload input[type=file]{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer}
+    .file-upload-label{display:inline-block;padding:12px 24px;background:#2a3142;border-radius:12px;border:2px dashed #4b8cff;text-align:center;transition:all 0.2s}
+    .file-upload:hover .file-upload-label{background:#3a4a5a;border-color:#5a9cff}
+    .uploaded-files{margin-top:12px}
+    .file-item{background:#1f2940;padding:8px 12px;border-radius:8px;margin:4px 0;display:flex;justify-content:space-between;align-items:center}
+    .file-item .remove{color:#ff8182;cursor:pointer;padding:4px 8px;border-radius:4px}
+    .file-item .remove:hover{background:#2a1f1f}
+    .prompt-preview{background:#1f2940;border-radius:8px;padding:16px;margin:12px 0;border-left:4px solid #4b8cff}
+    .actions{text-align:center;margin-top:32px}
+    .save-btn{background:#7ee787;color:#0f1115;font-size:16px;padding:16px 32px}
+    .save-btn:hover{background:#6dd676}
+    .test-btn{background:#ffa726;color:#0f1115}
+    .test-btn:hover{background:#ff9800}
+    .integrations-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:16px 0}
+    .integration-card{background:#1f2940;border-radius:12px;padding:16px;border:1px solid #2a3142}
+    .integration-card h4{margin:0 0 12px 0;color:#4b8cff}
+    .integration-card input{margin-bottom:12px}
+    .integration-card .description{font-size:13px;opacity:.8;margin-bottom:12px}
   </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Создай ИИ‑ассистента за 2 минуты</h1>
+  <h1>🤖 Настройка ИИ-ассистента</h1>
+  <div class="subtitle">Настройте все параметры ассистента на одной странице</div>
   <div id="msg" class="muted"></div>
 
-  <!-- Шаг 1 -->
-  <div id="s1" class="card">
-    <label>Опишите бизнес</label>
-    <textarea id="business" placeholder="Например: Кафе с доставкой кофе по Алматы"></textarea>
-    <label>Что должен уметь бот?</label>
-    <textarea id="abilities" placeholder="Отвечать на вопросы, принимать заказы, советовать меню"></textarea>
+  <!-- Основные настройки -->
+  <div class="card">
+    <h3>📋 Основная информация</h3>
     <div class="row">
-      <button id="s1next">Далее</button>
+      <div class="col">
+        <label>Опишите ваш бизнес</label>
+        <textarea id="business" placeholder="Например: Кафе с доставкой кофе по Алматы, специализируемся на элитных сортах кофе и десертах"></textarea>
+      </div>
+      <div class="col">
+        <label>Что должен уметь ассистент?</label>
+        <textarea id="abilities" placeholder="Отвечать на вопросы о меню, принимать заказы, советовать кофе, рассказывать о доставке"></textarea>
+      </div>
     </div>
-  </div>
-
-  <!-- Шаг 2 -->
-  <div id="s2" class="card hidden">
+    
     <label>Тон общения</label>
     <div class="chips" id="tones">
-      <div class="chip active" data-v="дружелюбный">дружелюбный</div>
-      <div class="chip" data-v="деловой">деловой</div>
-      <div class="chip" data-v="экспертный">экспертный</div>
-    </div>
-    <div class="row">
-      <button id="s2back">Назад</button>
-      <button id="s2next">Далее</button>
+      <div class="chip active" data-v="дружелюбный">😊 Дружелюбный</div>
+      <div class="chip" data-v="деловой">💼 Деловой</div>
+      <div class="chip" data-v="экспертный">🎓 Экспертный</div>
+      <div class="chip" data-v="креативный">🎨 Креативный</div>
+      <div class="chip" data-v="формальный">📝 Формальный</div>
     </div>
   </div>
 
-  <!-- Шаг 3 -->
-  <div id="s3" class="card hidden">
-    <label>Материалы (PDF / DOCX / XLSX / JPG/PNG)</label>
-    <input id="file" type="file" multiple />
-    <div class="muted">Можно пропустить — бот будет работать только по промпту.</div>
-    <div class="row">
-      <button id="s3skip">Пропустить</button>
-      <button id="s3upload">Загрузить</button>
+  <!-- Загрузка материалов -->
+  <div class="card">
+    <h3>📚 Материалы и документы</h3>
+    <label>Загрузите файлы для обучения ассистента</label>
+    <div class="muted">Поддерживаемые форматы: PDF, DOCX, XLSX, JPG, PNG</div>
+    
+    <div class="file-upload">
+      <input type="file" id="file" multiple accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png"/>
+      <label for="file" class="file-upload-label">📁 Выбрать файлы</label>
     </div>
-    <div id="s3status" class="muted"></div>
+    
+    <div id="uploaded-files" class="uploaded-files"></div>
+    <div id="upload-status" class="muted"></div>
   </div>
 
-  <!-- Шаг 4 -->
-  <div id="s4" class="card hidden">
-    <label>Автосгенерированный промпт</label>
-    <textarea id="prompt" placeholder="Будет сгенерирован на основе предыдущих шагов"></textarea>
-    <div class="row">
-      <button id="s4back">Назад</button>
-      <button id="s4next">Далее</button>
+  <!-- Автогенерированный промпт -->
+  <div class="card">
+    <h3>🧠 Системный промпт</h3>
+    <label>Промпт автоматически генерируется на основе ваших настроек</label>
+    <div id="prompt-preview" class="prompt-preview">
+      <em>Нажмите "Обновить промпт" чтобы сгенерировать промпт на основе текущих настроек</em>
+    </div>
+    <button onclick="generatePrompt()" class="secondary">🔄 Обновить промпт</button>
+    <button onclick="editPrompt()" class="secondary">✏️ Редактировать вручную</button>
+  </div>
+
+  <!-- Интеграции с каналами -->
+  <div class="card">
+    <h3>🔗 Интеграции с каналами</h3>
+    <div class="integrations-grid">
+      <!-- Telegram -->
+      <div class="integration-card">
+        <h4>📱 Telegram</h4>
+        <div class="description">Настройте Telegram бота для общения с клиентами</div>
+        <label>Bot Token</label>
+        <input type="text" id="telegram_token" placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"/>
+        <label>Webhook Mode</label>
+        <select id="telegram_webhook_mode">
+          <option value="false">Polling (разработка)</option>
+          <option value="true">Webhook (продакшн)</option>
+        </select>
+        <div class="muted">Polling для разработки, Webhook для продакшена</div>
+      </div>
+
+      <!-- WhatsApp -->
+      <div class="integration-card">
+        <h4>💬 WhatsApp Business</h4>
+        <div class="description">Подключите WhatsApp Business API для общения с клиентами</div>
+        <label>Access Token</label>
+        <input type="text" id="whatsapp_access_token" placeholder="EAA..."/>
+        <label>Phone Number ID</label>
+        <input type="text" id="whatsapp_phone_number_id" placeholder="123456789"/>
+        <label>Verify Token</label>
+        <input type="text" id="whatsapp_verify_token" placeholder="your_verify_token"/>
+        <label>App Secret</label>
+        <input type="text" id="whatsapp_app_secret" placeholder="your_app_secret"/>
+        <div class="muted">Получите в Meta Developer Console</div>
+      </div>
+
+      <!-- Instagram -->
+      <div class="integration-card">
+        <h4>📸 Instagram DM</h4>
+        <div class="description">Подключите Instagram Direct Messages для общения с клиентами</div>
+        <label>Access Token</label>
+        <input type="text" id="instagram_access_token" placeholder="EAA..."/>
+        <label>Business Account ID</label>
+        <input type="text" id="instagram_business_account_id" placeholder="123456789"/>
+        <label>Page ID</label>
+        <input type="text" id="instagram_page_id" placeholder="123456789"/>
+        <label>Verify Token</label>
+        <input type="text" id="instagram_verify_token" placeholder="your_verify_token"/>
+        <div class="muted">Требует Instagram Business Account</div>
+      </div>
+    </div>
+    
+    <div class="row" style="margin-top: 16px;">
+      <button onclick="testChannels()" class="secondary">🧪 Тест каналов</button>
+      <button onclick="getWebhookUrls()" class="secondary">🔗 Получить Webhook URLs</button>
+    </div>
+  </div>
+    </div>
+    <button onclick="generatePrompt()" class="secondary">🔄 Обновить промпт</button>
+    <button onclick="editPrompt()" class="secondary">✏️ Редактировать вручную</button>
+  </div>
+
+  <!-- Интеграции -->
+  <div class="card">
+    <h3>🔗 Интеграции</h3>
+    <div class="integrations-grid">
+      <div class="integration-card">
+        <h4>📱 WhatsApp</h4>
+        <div class="description">Подключение к WhatsApp Business API</div>
+        <input id="wa_token" placeholder="Meta Access Token"/>
+        <input id="wa_phone" placeholder="Phone Number ID"/>
+      </div>
+      
+      <div class="integration-card">
+        <h4>✈️ Telegram</h4>
+        <div class="description">Использование собственного бота</div>
+        <input id="tg_token" placeholder="Bot Token (если свой)"/>
+      </div>
+      
+      <div class="integration-card">
+        <h4>📸 Instagram Direct</h4>
+        <div class="description">Интеграция с Instagram</div>
+        <input id="ig_app" placeholder="App ID (опционально)"/>
+      </div>
+      
+      <div class="integration-card">
+        <h4>🌐 Веб-сайт</h4>
+        <div class="description">Встраивание в ваш сайт</div>
+        <button onclick="getWidgetCode()" class="secondary">📋 Получить код</button>
+      </div>
     </div>
   </div>
 
-  <!-- Шаг 5 -->
-  <div id="s5" class="card hidden">
-    <label>Интеграции (опционально)</label>
-    <details>
-      <summary>WhatsApp (Meta)</summary>
-      <input id="wa_token" placeholder="Meta Access Token"/>
-      <input id="wa_phone" placeholder="Phone Number ID"/>
-    </details>
-    <details>
-      <summary>Telegram</summary>
-      <input id="tg_token" placeholder="Bot Token (если свой)"/>
-    </details>
-    <details>
-      <summary>Instagram Direct (Meta)</summary>
-      <input id="ig_app" placeholder="App ID (опц.)"/>
-    </details>
-    <div class="row">
-      <button id="s5skip">Пропустить</button>
-      <button id="s5next">Сохранить</button>
-    </div>
-  </div>
-
-  <!-- Шаг 6 -->
-  <div id="s6" class="card hidden">
-    <h2 class="ok">Ваш ассистент готов</h2>
-    <div class="center">
-      <button id="openTest">Открыть тест‑чат</button>
-      <button id="openTg">Открыть в Telegram</button>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <button id="getCode">Код для сайта</button>
-      <button id="openPanel">Панель управления</button>
-    </div>
+  <!-- Действия -->
+  <div class="actions">
+    <button onclick="saveAll()" class="save-btn">💾 Сохранить все настройки</button>
+    <button onclick="testAssistant()" class="test-btn">🧪 Тестировать ассистента</button>
   </div>
 </div>
 
@@ -126,9 +212,9 @@
   const G = path => fetch(path + "?initData=" + encodeURIComponent(initData)).then(r=>r.json());
 
   const $ = id => document.getElementById(id);
-  const show = id => { ["s1","s2","s3","s4","s5","s6"].forEach(x=>$(x).classList.add("hidden")); $(id).classList.remove("hidden"); };
+  let uploadedFiles = [];
 
-  // init
+  // Инициализация
   (async () => {
     try {
       const v = await S("/api/verify");
@@ -139,72 +225,257 @@
       if (saved.tone) document.querySelectorAll("#tones .chip").forEach(c=>{
         c.classList.toggle("active", c.dataset.v===saved.tone);
       });
-      if (saved.prompt) $("prompt").value = saved.prompt;
+      if (saved.prompt) updatePromptPreview(saved.prompt);
+      if (saved.integrations) loadIntegrations(saved.integrations);
     } catch(e) {
       $("msg").textContent = "Ошибка инициализации: " + (e.message || e);
     }
   })();
 
-  // навигация и сохранения
-  $("s1next").onclick = async () => {
-    await P("/api/save_basics", {business: $("business").value, abilities: $("abilities").value});
-    show("s2");
-  };
-
+  // Выбор тона общения
   document.querySelectorAll("#tones .chip").forEach(chip=>{
     chip.onclick = () => {
       document.querySelectorAll("#tones .chip").forEach(c=>c.classList.remove("active"));
       chip.classList.add("active");
     };
   });
-  $("s2back").onclick = ()=>show("s1");
-  $("s2next").onclick = async ()=>{
-    const tone = document.querySelector("#tones .chip.active")?.dataset.v || "дружелюбный";
-    await P("/api/save_tone", {tone});
-    // авто‑генерация промпта
-    const r = await P("/api/generate_prompt", {});
-    $("prompt").value = r.prompt || "";
-    show("s3");
-  };
 
-  $("s3skip").onclick = ()=>show("s4");
-  $("s3upload").onclick = async ()=>{
-    const files = $("file").files;
-    if (!files.length) return show("s4");
-    let ok=0, fail=0;
-    for (const f of files){
-      const fd = new FormData();
-      fd.append("initData", initData);
-      fd.append("file", f);
-      const res = await fetch("/api/upload_file", {method:"POST", body:fd});
-      res.ok ? ok++ : fail++;
+  // Загрузка файлов
+  $("file").onchange = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    
+    $("upload-status").textContent = "Загружаю файлы...";
+    let ok = 0, fail = 0;
+    
+    for (const file of files) {
+      try {
+        const fd = new FormData();
+        fd.append("initData", initData);
+        fd.append("file", file);
+        const res = await fetch("/api/upload_file", {method:"POST", body:fd});
+        
+        if (res.ok) {
+          ok++;
+          uploadedFiles.push({
+            name: file.name,
+            size: file.size,
+            type: file.type
+          });
+        } else {
+          fail++;
+        }
+      } catch(e) {
+        fail++;
+      }
     }
-    $("s3status").textContent = `Загружено: ${ok}, ошибок: ${fail}`;
-    show("s4");
+    
+    updateUploadedFiles();
+    $("upload-status").textContent = "Загружено: " + ok + ", ошибок: " + fail;
   };
 
-  $("s4back").onclick = ()=>show("s3");
-  $("s4next").onclick = async ()=>{
-    // если пользователь правил промпт вручную — сохраним
-    await P("/api/generate_prompt", {}); // тут можно сделать /api/save_prompt, если хочешь
-    show("s5");
-  };
+  function updateUploadedFiles() {
+    const container = $("uploaded-files");
+    container.innerHTML = uploadedFiles.map(f => 
+      '<div class="file-item">' +
+        '<span>📄 ' + f.name + ' (' + (f.size/1024).toFixed(1) + 'KB)</span>' +
+        '<span class="remove" onclick="removeFile(\'' + f.name + '\')">❌</span>' +
+      '</div>'
+    ).join("");
+  }
 
-  $("s5skip").onclick = ()=>show("s6");
-  $("s5next").onclick = async ()=>{
-    const integrations = {
-      whatsapp: {token:$("wa_token").value, phone_id:$("wa_phone").value},
-      telegram: {bot_token:$("tg_token").value},
-      instagram: {app_id:$("ig_app").value}
-    };
-    await P("/api/save_integrations", {integrations});
-    show("s6");
-  };
+  function removeFile(name) {
+    uploadedFiles = uploadedFiles.filter(f => f.name !== name);
+    updateUploadedFiles();
+  }
 
-  $("openTest").onclick = ()=> tg?.showAlert?.("Здесь будет встроенный тест‑чат 😊");
-  $("openTg").onclick   = ()=> tg?.openTelegramLink?.("https://t.me/");
-  $("getCode").onclick  = ()=> tg?.showAlert?.("<script src='https://.../widget.js'></script>");
-  $("openPanel").onclick= ()=> tg?.close(); // вернуться в чат
+  // Генерация промпта
+  async function generatePrompt() {
+    try {
+      const business = $("business").value.trim();
+      const abilities = $("abilities").value.trim();
+      const tone = document.querySelector("#tones .chip.active")?.dataset.v || "дружелюбный";
+      
+      if (!business || !abilities) {
+        alert("Заполните описание бизнеса и возможности ассистента");
+        return;
+      }
+      
+      const r = await P("/api/generate_prompt", {business, abilities, tone});
+      if (r.prompt) {
+        updatePromptPreview(r.prompt);
+      }
+    } catch(e) {
+      alert("Ошибка генерации промпта: " + e.message);
+    }
+  }
+
+  function updatePromptPreview(prompt) {
+    $("prompt-preview").innerHTML = prompt.replace(/\n/g, '<br>');
+  }
+
+  function editPrompt() {
+    const currentPrompt = $("prompt-preview").innerText;
+    const newPrompt = prompt("Редактируйте промпт:", currentPrompt);
+    if (newPrompt && newPrompt !== currentPrompt) {
+      updatePromptPreview(newPrompt);
+    }
+  }
+
+  // Загрузка интеграций
+  function loadIntegrations(integrations) {
+    // Telegram
+    if (integrations.telegram) {
+      $("telegram_token").value = integrations.telegram.token || "";
+      $("telegram_webhook_mode").value = integrations.telegram.webhook_mode || "false";
+    }
+    
+    // WhatsApp
+    if (integrations.whatsapp) {
+      $("whatsapp_access_token").value = integrations.whatsapp.access_token || "";
+      $("whatsapp_phone_number_id").value = integrations.whatsapp.phone_number_id || "";
+      $("whatsapp_verify_token").value = integrations.whatsapp.verify_token || "";
+      $("whatsapp_app_secret").value = integrations.whatsapp.app_secret || "";
+    }
+    
+    // Instagram
+    if (integrations.instagram) {
+      $("instagram_access_token").value = integrations.instagram.access_token || "";
+      $("instagram_business_account_id").value = integrations.instagram.business_account_id || "";
+      $("instagram_page_id").value = integrations.instagram.page_id || "";
+      $("instagram_verify_token").value = integrations.instagram.verify_token || "";
+    }
+  }
+
+  // Сохранение всех настроек
+  async function saveAll() {
+    try {
+      const business = $("business").value.trim();
+      const abilities = $("abilities").value.trim();
+      const tone = document.querySelector("#tones .chip.active")?.dataset.v || "дружелюбный";
+      
+      if (!business || !abilities) {
+        alert("Заполните обязательные поля");
+        return;
+      }
+      
+      // Сохраняем основные настройки
+      await P("/api/save_basics", {business, abilities});
+      await P("/api/save_tone", {tone});
+      
+      // Сохраняем интеграции
+      const integrations = {
+        telegram: {
+          token: $("telegram_token").value,
+          webhook_mode: $("telegram_webhook_mode").value === "true"
+        },
+        whatsapp: {
+          access_token: $("whatsapp_access_token").value,
+          phone_number_id: $("whatsapp_phone_number_id").value,
+          verify_token: $("whatsapp_verify_token").value,
+          app_secret: $("whatsapp_app_secret").value
+        },
+        instagram: {
+          access_token: $("instagram_access_token").value,
+          business_account_id: $("instagram_business_account_id").value,
+          page_id: $("instagram_page_id").value,
+          verify_token: $("instagram_verify_token").value
+        }
+      };
+      await P("/api/save_integrations", {integrations});
+      
+      // Генерируем промпт если не был создан
+      if ($("prompt-preview").innerText.includes("Нажмите")) {
+        await generatePrompt();
+      }
+      
+      alert("✅ Все настройки сохранены!");
+    } catch(e) {
+      alert("Ошибка сохранения: " + e.message);
+    }
+  }
+
+  // Тестирование ассистента
+  function testAssistant() {
+    const business = $("business").value.trim();
+    if (!business) {
+      alert("Сначала заполните описание бизнеса");
+      return;
+    }
+    
+    const testUrl = "https://t.me/your_bot_username?start=test";
+    if (tg?.openTelegramLink) {
+      tg.openTelegramLink(testUrl);
+    } else {
+      alert("Откройте бота в Telegram и отправьте /ask для тестирования");
+    }
+  }
+
+  // Получение кода для сайта
+  function getWidgetCode() {
+    const code = '<script src="https://your-domain.com/widget.js"></script>\n' +
+                 '<div id="botcraft-widget" data-token="YOUR_TOKEN"></div>';
+    
+    if (tg?.showAlert) {
+      tg.showAlert("Код для встраивания:\n\n" + code);
+    } else {
+      alert("Код для встраивания:\n\n" + code);
+    }
+  }
+
+  // Тестирование каналов
+  async function testChannels() {
+    try {
+      const response = await fetch("/channels/status");
+      const data = await response.json();
+      
+      if (data.ok) {
+        let status = "📊 Статус каналов:\n\n";
+        for (const [name, channel] of Object.entries(data.channels)) {
+          const statusIcon = channel.active ? "✅" : "❌";
+          status += `${statusIcon} ${name}: ${channel.active ? "активен" : "неактивен"}\n`;
+        }
+        
+        if (tg?.showAlert) {
+          tg.showAlert(status);
+        } else {
+          alert(status);
+        }
+      } else {
+        alert("Ошибка получения статуса каналов");
+      }
+    } catch(e) {
+      alert("Ошибка тестирования каналов: " + e.message);
+    }
+  }
+
+  // Получение Webhook URLs
+  async function getWebhookUrls() {
+    try {
+      const response = await fetch("/channels/status");
+      const data = await response.json();
+      
+      if (data.ok) {
+        let urls = "🔗 Webhook URLs для настройки:\n\n";
+        for (const [name, channel] of Object.entries(data.channels)) {
+          if (channel.config && channel.config.webhook_base_url) {
+            const webhookUrl = channel.config.webhook_base_url + "/webhook/" + name;
+            urls += `${name.toUpperCase()}: ${webhookUrl}\n`;
+          }
+        }
+        
+        if (tg?.showAlert) {
+          tg.showAlert(urls);
+        } else {
+          alert(urls);
+        }
+      } else {
+        alert("Ошибка получения webhook URLs");
+      }
+    } catch(e) {
+      alert("Ошибка получения webhook URLs: " + e.message);
+    }
+  }
 </script>
 </body>
-</html>
+</html> 

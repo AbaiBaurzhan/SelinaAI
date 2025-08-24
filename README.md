@@ -45,7 +45,7 @@ cd SelinaAI
 
 2. **Создайте виртуальное окружение:**
 ```bash
-python -m venv .venv
+python3 -m venv .venv_new
 source .venv/bin/activate  # Linux/Mac
 # или
 .venv\Scripts\activate     # Windows

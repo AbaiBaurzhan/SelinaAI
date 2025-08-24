@@ -1,1 +1,20 @@
+# Простой Dockerfile для Cloud Run
 FROM python:3.11-slim
+
+WORKDIR /app
+
+# Устанавливаем зависимости
+RUN pip install fastapi uvicorn
+
+# Копируем простое приложение
+COPY simple_app.py .
+
+# Устанавливаем переменные окружения
+ENV PYTHONUNBUFFERED=1
+ENV PORT=8080
+
+# Открываем порт
+EXPOSE 8080
+
+# Запускаем приложение
+CMD ["python", "-m", "uvicorn", "simple_app:app", "--host", "0.0.0.0", "--port", "8080"]

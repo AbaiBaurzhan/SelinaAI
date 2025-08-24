@@ -1,4 +1,4 @@
-# app.py - BotCraft Multi-Channel API
+# app.py - SelinaAI Multi-Channel API
 from __future__ import annotations
 import os
 import json
@@ -57,7 +57,7 @@ CHANNELS_CONFIG = {
 
 # ---------- App ----------
 app = FastAPI(
-    title="BotCraft Multi-Channel API",
+    title="SelinaAI Multi-Channel API",
     description="Платформа для создания ИИ-ассистентов с поддержкой Telegram, WhatsApp и Instagram",
     version="2.0.0"
 )
@@ -83,12 +83,12 @@ def get_agent_manager_dep() -> Any:
 # ---------- Базовые эндпоинты ----------
 @app.get("/health")
 async def health(): 
-    return {"ok": True, "service": "BotCraft Multi-Channel API", "version": "2.0.0"}
+    return {"ok": True, "service": "SelinaAI Multi-Channel API", "version": "2.0.0"}
 
 @app.get("/healthz")
 async def healthz(): 
     """Health check endpoint for Google Cloud Run"""
-    return {"status": "healthy", "service": "BotCraft", "version": "2.0.0"}
+    return {"status": "healthy", "service": "SelinaAI", "version": "2.0.0"}
 
 @app.get("/")
 async def root():
@@ -97,11 +97,11 @@ async def root():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>BotCraft API</title>
+        <title>SelinaAI API</title>
         <meta charset="utf-8">
     </head>
     <body>
-        <h1>🚀 BotCraft Multi-Channel API</h1>
+        <h1>🚀 SelinaAI Multi-Channel API</h1>
         <p>Платформа для создания ИИ-ассистентов</p>
         <p><a href="/docs">📚 API Документация</a></p>
         <p><a href="/webapp">🌐 WebApp Интерфейс</a></p>
@@ -607,7 +607,7 @@ async def startup_event():
     try:
         # Запускаем все каналы
         await channel_manager.start_all_channels()
-        print("🚀 BotCraft Multi-Channel API v2.0 запущен")
+        print("🚀 SelinaAI Multi-Channel API v2.0 запущен")
         print("📱 Поддержка: Telegram, WhatsApp, Instagram")
         print("🔐 Система авторизации: активна")
         print("🤖 Управление агентами: готово")
@@ -620,6 +620,6 @@ async def shutdown_event():
     try:
         # Останавливаем все каналы
         await channel_manager.stop_all_channels()
-        print("🛑 BotCraft Multi-Channel API остановлен")
+        print("🛑 SelinaAI Multi-Channel API остановлен")
     except Exception as e:
         print(f"❌ Ошибка остановки каналов: {e}")

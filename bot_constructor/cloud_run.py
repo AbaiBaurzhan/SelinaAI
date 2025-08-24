@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Cloud Run Entry Point for BotCraft
+Cloud Run Entry Point for SelinaAI
 Автоматически определяет режим работы: локальный (polling) или облачный (webhook)
 """
 
@@ -73,7 +73,7 @@ async def setup_environment():
 
 def main():
     """Главная функция запуска"""
-    print("🚀 BotCraft Multi-Channel API")
+    print("🚀 SelinaAI Multi-Channel API")
     print("=" * 40)
     
     # Настраиваем окружение

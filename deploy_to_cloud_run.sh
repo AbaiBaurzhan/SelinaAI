@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Скрипт развертывания BotCraft в Google Cloud Run
+# Скрипт развертывания SelinaAI в Google Cloud Run
 # Использование: ./deploy_to_cloud_run.sh [PROJECT_ID] [REGION] [SERVICE_NAME]
 
 set -e
@@ -10,7 +10,7 @@ PROJECT_ID=${1:-"your-project-id"}
 REGION=${2:-"us-central1"}
 SERVICE_NAME=${3:-"botcraft"}
 
-echo "🚀 Развертывание BotCraft в Google Cloud Run"
+echo "🚀 Развертывание SelinaAI в Google Cloud Run"
 echo "=============================================="
 echo "Project ID: $PROJECT_ID"
 echo "Region: $REGION"
@@ -86,4 +86,4 @@ echo ""
 echo "3. Проверьте статус webhook:"
 echo "   curl \"https://api.telegram.org/botYOUR_BOT_TOKEN/getWebhookInfo\""
 echo ""
-echo "🎉 BotCraft готов к использованию в облаке!"
+echo "🎉 SelinaAI готов к использованию в облаке!"

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BotCraft Multi-Channel Development Runner
+SelinaAI Multi-Channel Development Runner
 Запуск всех компонентов для разработки
 """
 
@@ -146,7 +146,7 @@ def update_env_with_ngrok(ngrok_url):
 
 def main():
     """Основная функция запуска"""
-    print("🚀 Запуск BotCraft Multi-Channel для разработки...")
+    print("🚀 Запуск SelinaAI Multi-Channel для разработки...")
     print("=" * 50)
     
     # Проверяем файл конфигурации

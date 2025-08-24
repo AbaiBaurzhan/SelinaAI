@@ -1,4 +1,4 @@
-# BotCraft Multi-Channel API Dependencies for Google Cloud Run
+# SelinaAI Multi-Channel API Dependencies for Google Cloud Run
 # Core Framework
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0

@@ -236,7 +236,7 @@ class TelegramChannel(BaseChannel):
         if message.content == "/start":
             return Response(
                 chat_id=message.chat_id,
-                content="🤖 Добро пожаловать в BotCraft!\n\n"
+                content="🤖 Добро пожаловать в SelinaAI!\n\n"
                        "Я ваш ИИ-ассистент. Отправьте /panel для настройки "
                        "или просто напишите мне сообщение."
             )

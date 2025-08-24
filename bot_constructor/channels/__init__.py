@@ -1,5 +1,5 @@
 """
-BotCraft Channels Module
+SelinaAI Channels Module
 Поддержка Telegram, WhatsApp Business и Instagram DM
 """
 

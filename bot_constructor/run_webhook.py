@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BotCraft Webhook Runner
+SelinaAI Webhook Runner
 Запуск системы в webhook режиме для продакшена
 """
 
@@ -134,7 +134,7 @@ def setup_webhook():
 
 def start_fastapi():
     """Запуск FastAPI сервера"""
-    print("🚀 Запуск BotCraft Webhook API...")
+    print("🚀 Запуск SelinaAI Webhook API...")
     
     try:
         process = subprocess.Popen([
@@ -150,7 +150,7 @@ def start_fastapi():
 
 def main():
     """Основная функция"""
-    print("🚀 Запуск BotCraft в Webhook режиме")
+    print("🚀 Запуск SelinaAI в Webhook режиме")
     print("=" * 50)
     
     # Проверяем файл окружения
@@ -223,7 +223,7 @@ def main():
         except:
             pass
         
-        print("🛑 BotCraft остановлен")
+        print("🛑 SelinaAI остановлен")
 
 if __name__ == "__main__":
     main()

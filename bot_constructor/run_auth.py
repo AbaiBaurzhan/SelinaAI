@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BotCraft Multi-Channel API Runner with Authentication
+SelinaAI Multi-Channel API Runner with Authentication
 Запуск обновленной системы с авторизацией
 """
 
@@ -111,7 +111,7 @@ def update_env_with_ngrok(ngrok_url):
 
 def start_fastapi():
     """Запуск FastAPI сервера"""
-    print("🚀 Запуск BotCraft Multi-Channel API...")
+    print("🚀 Запуск SelinaAI Multi-Channel API...")
     
     try:
         # Запускаем uvicorn
@@ -128,7 +128,7 @@ def start_fastapi():
 
 def main():
     """Основная функция"""
-    print("🚀 Запуск BotCraft Multi-Channel API с авторизацией")
+    print("🚀 Запуск SelinaAI Multi-Channel API с авторизацией")
     print("=" * 60)
     
     # Проверяем файл окружения
@@ -194,7 +194,7 @@ def main():
         except:
             pass
         
-        print("🛑 BotCraft остановлен")
+        print("🛑 SelinaAI остановлен")
 
 if __name__ == "__main__":
     main()

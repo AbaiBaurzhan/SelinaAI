@@ -1,5 +1,5 @@
 """
-Database Module for BotCraft
+Database Module for SelinaAI
 Управление базой данных, пользователями и ИИ агентами
 """
 

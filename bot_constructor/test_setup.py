@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Тест настройки BotCraft
+Тест настройки SelinaAI
 Проверяет импорты и базовую функциональность
 """
 import sys
@@ -112,7 +112,7 @@ def test_env_file():
     return True
 
 def main():
-    print("🚀 Тест настройки BotCraft\n")
+    print("🚀 Тест настройки SelinaAI\n")
     
     success = True
     

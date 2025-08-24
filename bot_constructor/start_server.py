@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Простой скрипт запуска BotCraft сервера
+Простой скрипт запуска SelinaAI сервера
 """
 
 import uvicorn
@@ -11,7 +11,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 if __name__ == "__main__":
-    print("🚀 Запуск BotCraft Multi-Channel API...")
+    print("🚀 Запуск SelinaAI Multi-Channel API...")
     print("📱 Поддержка: Telegram, WhatsApp, Instagram")
     print("🔐 Система авторизации: активна")
     print("🤖 Управление агентами: готово")

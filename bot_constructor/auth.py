@@ -1,5 +1,5 @@
 """
-Authentication Module for BotCraft
+Authentication Module for SelinaAI
 Система авторизации пользователей
 """
 

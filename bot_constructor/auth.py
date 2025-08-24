@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from urllib.parse import parse_qsl, unquote_plus
 from fastapi import HTTPException, Request
-from database import db, User
+from .database import db, User
 
 
 class AuthManager:

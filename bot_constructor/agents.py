@@ -7,9 +7,9 @@ import json
 import time
 from typing import List, Optional, Dict, Any
 from fastapi import HTTPException, Request, UploadFile, File, Form
-from database import db, User, AIAgent, Document
-from auth import get_current_user, get_optional_user
-from channels.manager import ChannelManager
+from .database import db, User, AIAgent, Document
+from .auth import get_current_user, get_optional_user
+from .channels.manager import ChannelManager
 from pathlib import Path
 
 

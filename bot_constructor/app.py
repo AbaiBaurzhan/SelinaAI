@@ -13,11 +13,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
 
 # Импортируем новые модули
-from database import db, User, AIAgent, Document
-from auth import auth_manager, get_current_user, get_optional_user
-from agents import get_agent_manager
-from channels.manager import ChannelManager
-from channels.base import Message, Response as ChannelResponse, MessageType
+from .database import db, User, AIAgent, Document
+from .auth import auth_manager, get_current_user, get_optional_user
+from .agents import get_agent_manager
+from .channels.manager import ChannelManager
+from .channels.base import Message, Response as ChannelResponse, MessageType
 
 # ---------- ENV ----------
 load_dotenv("touch.env") or load_dotenv()

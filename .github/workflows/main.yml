@@ -22,9 +22,12 @@ jobs:
       uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
+        project_id: ${{ env.PROJECT_ID }}
     
     - name: Setup Google Cloud CLI
       uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: ${{ env.PROJECT_ID }}
     
     - name: Configure Docker for GCR
       run: gcloud auth configure-docker
@@ -76,10 +79,6 @@ jobs:
         sleep 30  # Ждем запуска сервиса
         curl -f "${{ steps.get-url.outputs.url }}/healthz" || exit 1
         echo "✅ Health check прошел успешно"
-    
-    - name: Post Google Auth
-      uses: google-github-actions/auth@v2
-      if: always()
     
     - name: Complete job
       run: echo "🎉 Job completed successfully"

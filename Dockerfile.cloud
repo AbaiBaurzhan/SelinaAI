@@ -1,20 +1,42 @@
-# Простой Dockerfile для Cloud Run
+# Оптимизированный Dockerfile для Google Cloud Run
 FROM python:3.11-slim
 
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Устанавливаем зависимости
-RUN pip install fastapi uvicorn
+# Устанавливаем системные зависимости
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
-# Копируем простое приложение
-COPY simple_app.py .
+# Копируем файл зависимостей
+COPY requirements.txt .
 
-# Устанавливаем переменные окружения
+# Устанавливаем Python зависимости
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Копируем код приложения
+COPY bot_constructor/ ./bot_constructor/
+
+# Создаем необходимые директории
+RUN mkdir -p bot_constructor/uploads
+
+# Устанавливаем переменные окружения для Cloud Run
+ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8080
+ENV CLOUD_RUN=true
 
-# Открываем порт
+# Открываем порт (Cloud Run использует переменную PORT)
 EXPOSE 8080
 
-# Запускаем приложение
-CMD ["python", "-m", "uvicorn", "simple_app:app", "--host", "0.0.0.0", "--port", "8080"]
+# Health check для Cloud Run
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8080/healthz || exit 1
+
+# Запускаем приложение через cloud_run.py
+CMD ["python", "bot_constructor/cloud_run.py"]

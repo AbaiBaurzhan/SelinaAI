@@ -8,6 +8,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Копируем файл зависимостей
@@ -29,6 +30,10 @@ ENV PORT=8080
 
 # Открываем порт (Cloud Run использует переменную PORT)
 EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/healthz || exit 1
 
 # Запускаем приложение
 CMD ["python", "-m", "uvicorn", "bot_constructor.app:app", "--host", "0.0.0.0", "--port", "8080"]

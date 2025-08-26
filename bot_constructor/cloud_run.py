@@ -7,10 +7,16 @@ Cloud Run Entry Point for SelinaAI
 import os
 import asyncio
 import uvicorn
+import sys
+from pathlib import Path
 from dotenv import load_dotenv
 
+# Добавляем корневую папку в PYTHONPATH
+root_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(root_dir))
+
 # Загружаем переменные окружения
-load_dotenv("touch.env")
+load_dotenv("bot_constructor/touch.env") or load_dotenv("touch.env")
 
 def is_cloud_environment():
     """Определяем, запущены ли мы в облаке"""
@@ -100,7 +106,7 @@ def main():
     
     # Запускаем сервер
     uvicorn.run(
-        "app:app",
+        "bot_constructor.app:app",
         host=config["host"],
         port=config["port"],
         log_level="info"

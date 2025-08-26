@@ -9,6 +9,7 @@ env:
   PROJECT_ID: 836619908242
   REGION: europe-central2
   SERVICE_NAME: selinaai-new
+  ARTIFACT_REGISTRY: europe-central2-docker.pkg.dev
 
 jobs:
   deploy:
@@ -29,22 +30,33 @@ jobs:
       with:
         project_id: ${{ env.PROJECT_ID }}
     
-    - name: Configure Docker for GCR
-      run: gcloud auth configure-docker
+    - name: Configure Docker for Artifact Registry
+      run: |
+        gcloud auth configure-docker ${{ env.ARTIFACT_REGISTRY }}
+        echo "✅ Docker настроен для Artifact Registry"
+    
+    - name: Create Artifact Registry Repository
+      run: |
+        echo "🔧 Создание репозитория в Artifact Registry..."
+        gcloud artifacts repositories create selinaai-repo \
+          --repository-format=docker \
+          --location=${{ env.REGION }} \
+          --description="SelinaAI Docker images" \
+          --quiet || echo "Репозиторий уже существует"
     
     - name: Build and Push Docker Image
       run: |
         echo "🔨 Сборка Docker образа..."
-        docker build -f Dockerfile.cloud -t gcr.io/${{ env.PROJECT_ID }}/selinaai:${{ github.sha }} .
-        echo "📤 Загрузка образа в Google Container Registry..."
-        docker push gcr.io/${{ env.PROJECT_ID }}/selinaai:${{ github.sha }}
-        echo "✅ Образ успешно загружен"
+        docker build -f Dockerfile.cloud -t ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/selinaai-repo/selinaai:${{ github.sha }} .
+        echo "📤 Загрузка образа в Artifact Registry..."
+        docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/selinaai-repo/selinaai:${{ github.sha }}
+        echo "✅ Образ успешно загружен в Artifact Registry"
     
     - name: Deploy to Cloud Run
       run: |
         echo "🚀 Развертывание в Google Cloud Run..."
         gcloud run deploy ${{ env.SERVICE_NAME }} \
-          --image gcr.io/${{ env.PROJECT_ID }}/selinaai:${{ github.sha }} \
+          --image ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/selinaai-repo/selinaai:${{ github.sha }} \
           --platform managed \
           --region ${{ env.REGION }} \
           --allow-unauthenticated \

@@ -8,7 +8,7 @@ on:
 env:
   PROJECT_ID: 836619908242
   REGION: europe-central2
-  SERVICE_NAME: selinaai-new
+  SERVICE_NAME: selinaai
   ARTIFACT_REGISTRY: europe-central2-docker.pkg.dev
 
 jobs:

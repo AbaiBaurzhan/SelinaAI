@@ -18,26 +18,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    name: Deploy to Cloud Run
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
-env:
-  PROJECT_ID: 836619908242
-  REGION: europe-central2
-  SERVICE_NAME: selinaai-new
-  ARTIFACT_REGISTRY: europe-central2-docker.pkg.dev
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
     
     - name: Google Auth
       uses: google-github-actions/auth@v2
@@ -62,78 +42,7 @@ jobs:
     
     - name: Build and Push Docker Image
       run: |
-        echo "�� Сборка Docker образа..."
-        docker build -f Dockerfile.cloud -t ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/selinaai/selinaai:${{ github.sha }} .
-        echo "📤 Загрузка образа в Artifact Registry..."
-        docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/selinaai/selinaai:${{ github.sha }}
-        echo "✅ Образ успешно загружен в Artifact Registry"
-    
-    - name: Deploy to Cloud Run
-      run: |
-        echo "🚀 Развертывание в Google Cloud Run..."
-        gcloud run deploy ${{ env.SERVICE_NAME }} \
-          --image ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/selinaai/selinaai:${{ github.sha }} \
-          --platform managed \
-          --region ${{ env.REGION }} \
-          --allow-unauthenticated \
-          --port 8080 \
-          --memory 1Gi \
-          --cpu 1 \
-          --max-instances 10 \
-          --timeout 300 \
-          --min-instances 0 \
-          --concurrency 80 \
-          --set-env-vars "CLOUD_RUN=true" \
-          --set-env-vars "TELEGRAM_WEBHOOK_MODE=true"
-        
-        echo "✅ Развертывание завершено"
-    
-    - name: Get Service URL
-      id: get-url
-      run: |
-        echo "url=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
-          --region ${{ env.REGION }} \
-          --format="value(status.url)")" >> $GITHUB_OUTPUT
-    
-    - name: Show Service URL
-      run: |
-        echo "�� Сервис доступен по адресу: ${{ steps.get-url.outputs.url }}"
-        echo "📱 Telegram Webhook: ${{ steps.get-url.outputs.url }}/webhook/telegram"
-        echo "📊 Health Check: ${{ steps.get-url.outputs.url }}/healthz"
-    
-    - name: Test Health Endpoint
-      run: |
-        echo "🧪 Тестирование health endpoint..."
-        sleep 30  # Ждем запуска сервиса
-        curl -f "${{ steps.get-url.outputs.url }}/healthz" || exit 1
-        echo "✅ Health check прошел успешно"
-    
-    - name: Complete job
-      run: echo "🎉 Job completed successfully"
-    - name: Google Auth
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
-        project_id: ${{ env.PROJECT_ID }}
-    
-    - name: Setup Google Cloud CLI
-      uses: google-github-actions/setup-gcloud@v2
-      with:
-        project_id: ${{ env.PROJECT_ID }}
-    
-    - name: Configure Docker for Artifact Registry
-      run: |
-        gcloud auth configure-docker ${{ env.ARTIFACT_REGISTRY }}
-        echo "✅ Docker настроен для Artifact Registry"
-    
-    - name: Create Artifact Registry Repository
-      run: |
-        echo "🔧 Создание репозитория в Artifact Registry..."
-        echo "✅ Репозиторий selinaai уже существует"
-    
-    - name: Build and Push Docker Image
-      run: |
-        echo "�� Сборка Docker образа..."
+        echo "🔨 Сборка Docker образа..."
         docker build -f Dockerfile.cloud -t ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/selinaai/selinaai:${{ github.sha }} .
         echo "📤 Загрузка образа в Artifact Registry..."
         docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/selinaai/selinaai:${{ github.sha }}

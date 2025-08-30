@@ -38,11 +38,15 @@ jobs:
     - name: Create Artifact Registry Repository
       run: |
         echo "🔧 Создание репозитория в Artifact Registry..."
-        echo "✅ Репозиторий selinaai уже существует"
+        gcloud artifacts repositories create selinaai \
+          --repository-format=docker \
+          --location=${{ env.REGION }} \
+          --description="SelinaAI Docker images" \
+          --quiet || echo "✅ Репозиторий selinaai уже существует"
     
     - name: Build and Push Docker Image
       run: |
-        echo "🔨 Сборка Docker образа..."
+        echo "�� Сборка Docker образа..."
         docker build -f Dockerfile.cloud -t ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/selinaai/selinaai:${{ github.sha }} .
         echo "📤 Загрузка образа в Artifact Registry..."
         docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/selinaai/selinaai:${{ github.sha }}
